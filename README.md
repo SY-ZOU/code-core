@@ -6,7 +6,7 @@
 
 <br>
 
-**`Code Core` ：一个神奇的程序猿修炼秘籍。**
+![](icon1.png)
 
 * [**介绍**](/README.md)
 * **PyTorch 深度学习**

@@ -1,6 +1,6 @@
 # get-start
 
-* [**介绍**](/README.md)
+* **介绍**
 * **PyTorch 深度学习**
 * - [PyTorch 深度学习](/pytorch/pytorch.md)
 * **FPGA**

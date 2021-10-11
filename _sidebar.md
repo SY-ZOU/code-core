@@ -1,6 +1,7 @@
 * [**介绍**](README.md)
-* **PyTorch 深度学习**
-* - [PyTorch 深度学习](pytorch/pytorch)
+* **深度学习**
+* - [深度学习基础](DL/dl)
+* - [PyTorch 深度学习](DL/pytorch)
 * **FPGA**
 * - [数字逻辑](fpga/shudian)
 * - [Verilog](fpga/verilog)

@@ -1,3 +1,182 @@
+## Tensor张量
+
+### 1. 简介
+
+Tensor是n维的张量，在概念上与numpy数组是一样的，**不同的是Tensor可以跟踪计算图和计算梯度。**
+
+```python
+# 1. 一般创建
+t.Tensor(2,3)       # 创建 2 * 3 的 tensor
+t.Tensor([1,2,3])   # 创建 tensor，值为 [1,2,3]
+# 2. 从 numpy 创建 tensor
+torch.Tensor(numpy_array)
+torch.from_numpy(numpy_array)
+# 3. 将 tensor 转换为 numpy
+numpy_array = pytensor2.numpy()  # 在 cpu 上
+numpy_array = pytensor2.cpu().numpy()  # 在 gpu 上
+# 4. 在指定 GPU 上创建与 data 一样的类型
+torch.tensor(data, dtype=torch.float64, device=torch.device('cuda:0'))
+# 5. 克隆
+b = a.clone() # b变化，a不变
+# 6. 特殊
+x = torch.empty(5, 3)    # 创建空的 Tensor
+x = torch.ones(3,2)      # 创建 1 矩阵
+x = torch.zeros(2,3)     # 创建 0 矩阵
+x = torch.eye(2,3)       # 创建单位矩阵 
+torch_tensor= torch.zeros([2,3],dtype=torch.float64,device=torch.device('cuda:0'))
+
+x = torch.arange(1,6,2)  # 创建 [1, 6)，间隔为 2
+x = torch.linspace(1, 10, 3)  # [1, 10]  等间距取 3 个数
+
+x = torch.randn(2,3)     # 随机矩阵
+x = torch.randperm(5)    # 长度为 5 的随机排列
+
+# 在区间[1,10]中随机创建Tensor
+torch_tensor5 = torch.randint(1,10,[2,2])
+```
+
+> **Tensor 与 numpy 对象共享内存**，所以他们之间切换很快，几乎不消耗资源。**但是，这意味着如果其中一个变化了，则另一个也会跟着改变。**
+
+#### 2. 主要属性
+
+- requires_grad: 如果需要为张量计算梯度，则为True，否则为False。（默认为False），
+
+- grad_fn： grad_fn用来记录变量是怎么来的，方便计算梯度。
+
+- grad：当执行完了backward()之后，通过x.grad查看x的梯度值。
+- dtype：属性标识了 `torch.Tensor`的数据类型。PyTorch 有八种不同的数据类型：
+- device：属性标识了`torch.Tensor`对象在创建之后所存储在的设备名称：cpu or cuda
+- shape：Tensor尺寸属性
+- ndim：Tensor的维度
+- is_cuda：是否cuda上
+
+### 3. 主要方法
+
+- type()    
+
+<img src=" https://superman-cant-fly.gitee.io/pics/v2-93db4bf2a4280f5f7c4b0dd9cc699e6b_1440w.jpg" />
+
+- size()：大小，torch.Size([2, 4])
+- dim()：维度，2
+- numel()：元素个数，8
+- item()：**查看值，对于标量Tensor**
+
+### 4. 索引
+
+> **索引出来的结果与原 tensor 共存，同时更改。**
+
+```python
+a = t.randn(3,4)
+b= a[:, 1]
+```
+
+### 5. Cpu/Gpu
+
+第一种方式是定义cuda数据类型。
+
+```python
+dtype = torch.cuda.FloatTensor
+gpu_tensor = torch.randn(1,2).type(dtype) #把Tensor转换为cuda数据类型
+```
+
+第二种方式是直接将Tensor放到GPU上(推荐)。
+
+```PYTHON
+gpu_tensor = torch.randn(1,2).cuda(0)#把Tensor直接放在第一个GPU上
+gpu_tensor = torch.randn(1,2).cuda(1)#把Tensor直接放在第二个GPU上
+```
+
+而将Tensor放在CPU上也很简单。
+
+```python
+cpu_tensor = gpu_tensor.cpu()
+```
+
+## 静态图与动态图
+
+- 计算图是用来描述运算的**有向无环图**
+- 计算图有两个主要元素：结点（Node）和边（Edge）；
+- **结点表示数据** ，如向量、矩阵、张量;
+- **边表示运算** ，如加减乘除卷积等；
+
+<img src=" https://superman-cant-fly.gitee.io/pics/v2-464ea7ee4475f3c7f08c389f65fd3e89_1440w.jpg" width=400 /> 
+
+>  y = a x b , a = x+w , b=w+1
+
+### 1. pytorch动态图
+
+Pytorch在计算的时候，就会把计算过程用上面那样的动态图存储起来。
+
+<img src="https://superman-cant-fly.gitee.io/pics/v2-d4c05b194d2e123cb246115e90ec917d_1440w.jpg" width=400 />
+
+体现到计算图中，就是根节点 y到叶子节点 w有两条路径y->a->w和y->b->w。根节点依次对每条路径的孩子节点求导，一直到叶子节点w，**最后把每条路径的导数相加即可**。
+
+<img src="https://superman-cant-fly.gitee.io/pics/2021-10-12.8.34.29.png" width=200/>
+
+```python
+import torch
+w = torch.tensor([1.], requires_grad=True)
+x = torch.tensor([2.], requires_grad=True)
+# y=(x+w)*(w+1)
+a = torch.add(w, x)     # retain_grad()
+b = torch.add(w, 1)
+y = torch.mul(a, b)
+# y 求导
+y.backward()
+# 打印 w 的梯度，就是 y 对 w 的导数
+print(w.grad)
+#结果为tensor([5.])。
+```
+
+我们回顾前面说过的 Tensor 中有一个属性`is_leaf`标记是否为叶子节点。
+
+<img src="https://superman-cant-fly.gitee.io/pics/v2-3bc1ff0ab920582a3491111b81a32fe5_1440w.jpg" width=400/>
+
+在上面的例子中，x 和w是叶子节点，其他所有节点都依赖于叶子节点。叶子节点的概念主要是为了节省内存，在**计算图中的一轮反向传播结束之后，非叶子节点的梯度是会被释放的**。
+
+```python
+# 查看叶子结点
+print("is_leaf:\n", w.is_leaf, x.is_leaf, a.is_leaf, b.is_leaf, y.is_leaf)
+# True True False False False
+# 查看梯度
+print("gradient:\n", w.grad, x.grad, a.grad, b.grad, y.grad)
+# tensor([5.]) tensor([2.]) None None None
+```
+
+如果在反向传播结束之后仍然需要保留非叶子节点的梯度，可以对节点使用`retain_grad()`方法。
+
+```python
+a = w+x
+a.retain_grad()
+b = w+1
+y = a*b
+```
+
+Tensor 中的 grad_fn 属性记录的是创建该张量时所用的方法 (函数)。**而在反向传播求导梯度时需要用到该属性。`y.grad_fn=MulBackward0`,表示y是通过乘法得到的。所以求导的时候就是用乘法的求导法则。同样的，`a.grad=AddBackward0`表示a是通过加法得到的，使用加法的求导法则。**
+
+```python
+# 查看梯度
+print("w.grad_fn = ", w.grad_fn)
+#w.grad_fn =  None,x是直接创建的，所以它没有grad_fn，而y是通过一个操作创建的，所以y有grad_fn
+print("x.grad_fn = ", x.grad_fn)#x.grad_fn =  None
+print("a.grad_fn = ", a.grad_fn)#a.grad_fn =  <AddBackward0 object at 0x000001D8DDD20588>
+print("b.grad_fn = ", b.grad_fn)#b.grad_fn =  <AddBackward0 object at 0x000001D8DDD20588>
+print("y.grad_fn = ", y.grad_fn)#y.grad_fn =  <MulBackward0 object at 0x000001D8DDD20588>
+```
+
+需要指出的是，**动态图是在前向的时候建立起来的。y作为前向的最终输出，在反向传播的时候，却是计算的最初输入—在动态图中，我们称之为root。**
+
+**每一次前向时构建graph，反向时销毁。**
+
+### 2. Tensorflow静态图
+
+静态图是先搭建图，然后再输入数据进行运算。优点是高效，因为静态计算是通过先定义后运行的方式，之后再次运行的时候就不再需要重新构建计算图，所以速度会比动态图更快。但是不灵活。**TensorFlow 每次运行的时候图都是一样的，是不能够改变的，**所以不能直接使用 Python 的 while 循环语句，需要使用辅助函数 tf.while_loop 写成 TensorFlow 内部的形式。
+
+静态图我们是需要先定义好运算规则流程的，然后把上面的运算流程存储下来，然后把w=1，x=2放到上面运算框架的入口位置进行运算。而动态图是直接对着已经赋值的w和x进行运算，然后变运算变构建运算图。
+
+- 静态图先说明数据要怎么计算，然后再放入数据。假设要放入50组数据，运算图因为是事先构建的，所以每一次计算梯度都很快、高效；
+
+- 动态图的运算图是在数据计算的同时构建的，假设要放入50组数据，那么就要生成50次运算图。这样就没有那么高效。所以称为**动态图**。(更容易调试、动态计算更适用于自然语言处理【这个可能是因为自然语言处理的输入往往不定长？】、动态图更面向对象编程，我们会感觉更加自然。)
 
 
 
@@ -15,20 +194,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-### 2. 自动梯度（autograd）
+## 自动梯度（autograd）
 
 
 

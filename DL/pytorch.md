@@ -2,7 +2,22 @@
 
 ### 1. 简介
 
-Tensor是n维的张量，在概念上与numpy数组是一样的，**不同的是Tensor可以跟踪计算图和计算梯度。**
+Tensor是n维的张量，在概念上与numpy数组是一样的，**不同的是Tensor可以跟踪计算图和计算梯度，并且可以在gpu或者tpu上运行。**
+
+`torch.Tensor`是默认的tensor类型（`torch.FlaotTensor`）的简称。
+
+tensor分为头信息区（Tensor）和存储区（Storage）。信息区主要保存着tensor的形状（size）、步长（stride）、数据类型（type）等信息，而真正的数据则保存成连续数组，存储在存储区。因为数据动辄成千上万，因此信息区元素占用内存较少，主要内存占用取决于tensor中元素的数目，即存储区的每一个张量tensor都有一个相应的`torch.Storage`用来保存其数据。
+
+| Data tyoe                | CPU tensor           | GPU tensor                |
+| ------------------------ | -------------------- | ------------------------- |
+| 32-bit floating point    | `torch.FloatTensor`  | `torch.cuda.FloatTensor`  |
+| 64-bit floating point    | `torch.DoubleTensor` | `torch.cuda.DoubleTensor` |
+| 16-bit floating point    | N/A                  | `torch.cuda.HalfTensor`   |
+| 8-bit integer (unsigned) | `torch.ByteTensor`   | `torch.cuda.ByteTensor`   |
+| 8-bit integer (signed)   | `torch.CharTensor`   | `torch.cuda.CharTensor`   |
+| 16-bit integer (signed)  | `torch.ShortTensor`  | `torch.cuda.ShortTensor`  |
+| 32-bit integer (signed)  | `torch.IntTensor`    | `torch.cuda.IntTensor`    |
+| 64-bit integer (signed)  | `torch.LongTensor`   | `torch.cuda.LongTensor`   |
 
 ```python
 # 1. 一般创建
@@ -33,11 +48,16 @@ x = torch.randperm(5)    # 长度为 5 的随机排列
 
 # 在区间[1,10]中随机创建Tensor
 torch_tensor5 = torch.randint(1,10,[2,2])
+
+x_ones = torch.ones_like(x_data)
+x_rand = torch.rand_like(x_data, dtype=torch.float) #覆盖x_data
+
+torch.IntTensor(2, 4).zero_()
 ```
 
 > **Tensor 与 numpy 对象共享内存**，所以他们之间切换很快，几乎不消耗资源。**但是，这意味着如果其中一个变化了，则另一个也会跟着改变。**
 
-#### 2. 主要属性
+### 2. 主要属性
 
 - requires_grad: 如果需要为张量计算梯度，则为True，否则为False。（默认为False），
 
@@ -60,6 +80,7 @@ torch_tensor5 = torch.randint(1,10,[2,2])
 - dim()：维度，2
 - numel()：元素个数，8
 - item()：**查看值，对于标量Tensor**
+- to()：to(device)
 
 ### 4. 索引
 
@@ -68,29 +89,22 @@ torch_tensor5 = torch.randint(1,10,[2,2])
 ```python
 a = t.randn(3,4)
 b= a[:, 1]
+a[0][1] = 8
 ```
 
-### 5. Cpu/Gpu
+### 5. 常见操作
 
-第一种方式是定义cuda数据类型。
+> 会改变tensor的函数操作会用一个下划线后缀来标示。比如，`torch.FloatTensor.abs_()`会在原地计算绝对值，并返回改变后的tensor，而`tensor.FloatTensor.abs()`将会在一个新的tensor中计算结果。
 
-```python
-dtype = torch.cuda.FloatTensor
-gpu_tensor = torch.randn(1,2).type(dtype) #把Tensor转换为cuda数据类型
-```
-
-第二种方式是直接将Tensor放到GPU上(推荐)。
-
-```PYTHON
-gpu_tensor = torch.randn(1,2).cuda(0)#把Tensor直接放在第一个GPU上
-gpu_tensor = torch.randn(1,2).cuda(1)#把Tensor直接放在第二个GPU上
-```
-
-而将Tensor放在CPU上也很简单。
-
-```python
-cpu_tensor = gpu_tensor.cpu()
-```
+- tensor.abs() / abs_()：绝对值
+- tensor.acos() /acos_()：x的反余弦弧度值
+- tensor.add()
+- 还有很多torch......操作
+- ..................................
+- **tensor.view()：**返回一个有相同数据但大小不同的tensor。 返回的tensor必须有与原tensor相同的数据和相同数目的元素，但可以有不同的大小。一个tensor必须是连续的`contiguous()`才能被`view`。
+- **tensor.zero_()**：用0填充
+- **uniform_(from=0, to=1) **：将tensor用从均匀分布中抽样得到的值填充。
+- 
 
 ## 静态图与动态图
 

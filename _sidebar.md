@@ -15,7 +15,7 @@
   - [文件与文件系统](os/file)
 * - [进程管理](os/process)
 * - [内存管理](os/memory)
-  - [UNIX编程](os/unix)
+  - [LINUX系统](os/unix)
 * **网络**
 * - [概述](net/net)
 * - [应用层](net/app)

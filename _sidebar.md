@@ -11,11 +11,12 @@
 * - [JAVA IO流](java/javaIO)
 * - [JAVA Socket](java/javaSOCKET)
 * **操作系统**
+* - [计算机组成原理](os/computer)
 * - [操作系统核心](os/os)
   - [文件与文件系统](os/file)
 * - [进程管理](os/process)
 * - [内存管理](os/memory)
-  - [LINUX系统](os/unix)
+  - [LINUX系统](os/linux)
 * **网络**
 * - [概述](net/net)
 * - [应用层](net/app)
